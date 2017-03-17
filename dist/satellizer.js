@@ -584,7 +584,6 @@
                         _this.popup.close();
                     }
 
-                    /*
                     try {
                         var popupWindowPath = getFullUrlPath(_this.popup.location);
                         if (popupWindowPath === redirectUriPath) {
@@ -610,7 +609,6 @@
                     }
                     catch (error) {
                     }
-                    */
                 }, 500);
             });
         };
