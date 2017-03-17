@@ -522,6 +522,7 @@
             return parts.join(',');
         };
         Popup.prototype.open = function (url, name, popupOptions, redirectUri, dontPoll) {
+            console.log("popup open")
             var width = popupOptions.width || 500;
             var height = popupOptions.height || 500;
             var options = this.stringifyOptions({
@@ -531,6 +532,7 @@
                 left: this.$window.screenX + ((this.$window.outerWidth - width) / 2)
             });
             var popupName = this.$window['cordova'] || this.$window.navigator.userAgent.indexOf('CriOS') > -1 ? '_blank' : name;
+
             this.popup = this.$window.open(url, popupName, options);
             if (this.popup && this.popup.focus) {
                 this.popup.focus();
@@ -554,11 +556,35 @@
                 var redirectUriParser = document.createElement('a');
                 redirectUriParser.href = redirectUri;
                 var redirectUriPath = getFullUrlPath(redirectUriParser);
+
+                _this.code = null;
+                var receiveMessage = function(event) {
+                    console.log("^^^^^^^recv message: ", event)
+                    var data = JSON.parse(event.data);
+                    if( data ) {
+                        _this.code = data.code;
+                    }
+                    // Do we trust the sender of this message?
+                    // if (event.origin !== re)
+                    //     return;
+                };
+                _this.$window.addEventListener("message", receiveMessage, false);
                 var polling = _this.$interval(function () {
+                    console.log('----- polling', _this)
                     if (!_this.popup || _this.popup.closed || _this.popup.closed === undefined) {
                         _this.$interval.cancel(polling);
                         reject(new Error('The popup window was closed'));
                     }
+
+                    // check for postMessage recv'd code, if we have it then resolve the promise
+                    if( _this.code ) {
+                        console.log('got code during polling! ', _this.code);
+                        resolve({code: _this.code});
+                        _this.$interval.cancel(polling);
+                        _this.popup.close();
+                    }
+
+                    /*
                     try {
                         var popupWindowPath = getFullUrlPath(_this.popup.location);
                         if (popupWindowPath === redirectUriPath) {
@@ -584,6 +610,7 @@
                     }
                     catch (error) {
                     }
+                    */
                 }, 500);
             });
         };
